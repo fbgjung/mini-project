@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+    body {
+        margin-top: 20px;
+    }
+    #searchInput {
+        margin-right:3px; 
+        border: 1px solid #e2e2e2;
+        border-radius: 5px; 
+        height: 20px;
+    }
+    #search{
+        color:white;
+        background-color: rgb(91, 96, 160);
+        border:white;
+        width:50px;
+        height:24px;
+        border-radius: 5px; 
+    }
+    #allAssign { 
+        padding-top: 70px;
+        border:gainsboro solid; 
+        height:1000px; width:800px; 
+        position: absolute;
+        top: 85%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 10px; /* 테두리를 둥글게 만드는 속성 */
+    } 
+    #allAssign li {
+        margin-bottom: 70px; /* li 요소들 사이에 띄움 여백 추가 */
+        position: relative;
+        list-style-type: none;
+        color:gray;
+    }
+    #allAssign li::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -28px; /* 수평선의 위치 조정 */
+        width: 750px;
+        height: 1px;
+        background-color: #bdbdbd; /* 수평선의 색상 설정 */
+    }
+
+    #allAssign li:last-child::after {
+        display: none; /* 마지막 li 요소의 수평선은 숨김 처리 */
+    }
+
+    #allAssign li::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 10px;
+        background-color: rgb(44, 163, 56); /* 동그라미의 색상 설정 */
+    }
+    .assignBtn{
+        color:white;
+        border:none;
+        width: 55px; 
+        height: 25px;
+        border-radius: 7px;
+        margin-right: 4px;
+        background-color: rgb(168, 190, 215);
+        cursor:pointer;
+    }
+
+    .detailBox {
+        width: 710px;
+        height: 50px;
+        border: 1px solid gray;
+        margin-top: 10px;
+        padding:20px;
+      }
+    
+    .inputBox{
+        width: 710px;
+        height: 100px;
+        border: 1px solid gray;
+        margin-top: 20px;
+        padding:20px;
+    }
+    .saveBtn {
+        margin-left: 700px;
+    }
+
+    #complete{
+        color:white;
+        background-color: rgb(91, 96, 160);
+        border:white;
+        border-radius: 5px; 
+        height:24px;
+        width:100px;
+        cursor:pointer;
+        float:right;
+    }      
+    ul{
+        position: fixed;
+    }
+  
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256- 2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+    <script>
+        // 모든 과제 맨 처음에 보여주기
+        window.onload = () => {
+            displayAssignments();
+            var h1 = document.querySelector('h1');
+            h1.addEventListener('click', function() {
+                location.reload();
+            });
+        }
+
+        function displayAssignments(){
+            var detailBtnId=0;
+            var assignId = 0;
+            var completeBtn = document.getElementById('complete');
+            var ul = document.getElementById('allAssign');
+            var searchBtn = document.getElementById('search');
+            
+            // 검색 필터링
+            searchBtn.addEventListener('click', function() {
+                var filterType = document.querySelector('input[name="searchType"]:checked').value;
+                console.log(filterType);
+                var searchInput = document.getElementById('searchInput').value;
+
+                // AJAX 요청
+                $.ajax({
+                    url: '/search',
+                    method: 'GET',
+                    data: { filterType: filterType, searchInput: searchInput },
+                    success: function(data) {
+                        // 검색 결과를 처리하는 로직을 여기에 구현
+                        // 서버로부터 받은 데이터를 순회하면서 각 과제에 대한 li 요소를 생성하고 ul에  추가
+                        ul.innerHTML='';
+                        for (var i = 0; i < data.length; i++) {
+                            var assignment = data[i];
+                            var li = document.createElement('li');
+                            li.id=assignId;
+                            assignId++;
+        
+                            var assignmentTitle = document.createElement('span');
+                            assignmentTitle.innerHTML = assignment.title;
+                            assignmentTitle.style.marginRight="30px";
+    
+                            var assignmentName = document.createElement('span');
+                            assignmentName.innerHTML = assignment.name;
+    
+                            var professorName = document.createElement('span');
+                            professorName.innerHTML = assignment.info;
+                            professorName.style.marginRight="10px";
+    
+                            // 버튼 요소 생성
+                            var detailBtn = document.createElement('button');
+                            detailBtn.innerHTML = '상세';
+                            detailBtn.classList.add('detailBtn', 'assignBtn'); // 클래스 추가
+                        
+                           // 상세 버튼 클릭 이벤트 핸들러 정의
+                            detailBtn.addEventListener('click', createDetailHandler(assignment));
+                            // 상세 버튼 클릭 이벤트 핸들러 함수 정의
+                            function createDetailHandler(assignment) {
+                                return function () {
+                                    var li = this.parentNode;
+                                    var detailBox = li.querySelector('.detailBox');
+                                    if (detailBox) {
+                                        // 이미 detailBox가 존재하는 경우, 토글 기능으로 보이기/감추기
+                                        detailBox.style.display = detailBox.style.display === 'none' ? 'block' : 'none';
+                                    } else {
+                                        // detailBox가 없는 경우, 새로 생성하여 추가
+                                        var detailBox = document.createElement('div');
+                                        detailBox.classList.add('detailBox');
+                                        detailBox.innerText = assignment.detail;
+                                        li.appendChild(detailBox);
+                                    }
+                                };
+                            }
+                           
+                            var submitBtn = document.createElement('button');
+                            submitBtn.innerHTML = '작성';
+                            submitBtn.classList.add('submitBtn', 'assignBtn'); // 클래스 추가
+    
+                            submitBtn.addEventListener('click', function(assignment){
+                                var li = this.parentNode;
+                                var liId = li.id; // li 요소의 id 값
+                                var inputBox = li.querySelector('.inputBox');
+                                var saveBtn = li.querySelector('.saveBtn');
+                            
+                                if (inputBox && saveBtn) {
+                                    inputBox.style.display = inputBox.style.display === 'none' ? 'block' : 'none';
+                                    saveBtn.style.display = saveBtn.style.display === 'none' ? 'block' : 'none';
+                                } else {
+                                    var inputBox = document.createElement('textarea');
+                                    inputBox.classList.add('inputBox'); // 클래스 추가
+                                    inputBox.id = 'inputBox';
+                                    inputBox.rows = '4';
+                                    inputBox.cols = '90';
+                                    inputBox.style.marginTop = "4px";
+                                    inputBox.placeholder = '입력해주세요';
+                            
+                                    var saveBtn = document.createElement('button');
+                                    saveBtn.classList.add('saveBtn'); // 클래스 추가
+                                    saveBtn.innerHTML = '제출';
+                                    saveBtn.classList.add('saveBtn', 'assignBtn'); // 클래스 추가
+                                }
+                                li.appendChild(inputBox);
+                                li.appendChild(saveBtn);
+    
+                                 // 제출 버튼 클릭 이벤트 핸들러 정의
+                                 saveBtn.addEventListener('click', createSaveHandler(assignment,liId));
+                                // 제출 버튼 클릭 이벤트 핸들러 함수 정의 
+                                function createSaveHandler(assignment,liId) {
+                                    return function () {
+                                        var li = event.target.parentNode; // 현재 이벤트가 발생한 요소의 부모 노드인 li 요소를 가져옴
+                                        var liId = li.id; // li 요소의 id 값
+                                        console.log(liId);
+                                      
+                                        var inputBox = li.querySelector('#inputBox').value;
+                                        console.log(inputBox);
+    
+                                        // 과제 리스트에서 제출 완료한 과제는 삭제
+                                        var ul = li.parentNode;
+                                        ul.removeChild(li);
+                                        StorageCompleteAssignment();
+    
+                                        if(inputBox){
+                                            $.ajax({
+                                                method:"POST",
+                                                url:"/submit",
+                                                data:{
+                                                    myAssignment:inputBox,
+                                                    liId:liId
+                                                },
+                                                success:function(data){
+                                                    
+                                                    console.log("success");
+                                                },
+                                                error:function(request, status, error){
+                                                    console.log("data send error");
+                                                }                                    
+                                            });
+                                        }
+                                    };
+                                }
+                             });
+                            li.appendChild(assignmentTitle);
+                            li.appendChild(assignmentName);
+                            li.appendChild(professorName);
+                            li.appendChild(detailBtn);
+                            li.appendChild(submitBtn);
+    
+                            ul.appendChild(li);
+                        }
+                    }
+                });
+            });
+
+            // 완료과제조회 버튼
+            function StorageCompleteAssignment(){
+                completeBtn.addEventListener("click", function() {
+                    $.ajax({
+                        url: '/complete',
+                        method: 'GET',
+                        success: function(data) {
+                            ul.innerHTML='';
+                            for (var i = 0; i < data.length; i++) {
+                            var assignment = data[i];
+                            var li = document.createElement('li');
+                            li.id=assignId;
+                            assignId++;
+        
+                            var assignmentTitle = document.createElement('span');
+                            assignmentTitle.innerHTML = assignment.title;
+                            assignmentTitle.style.marginRight="30px";
+
+                            var assignmentName = document.createElement('span');
+                            assignmentName.innerHTML = assignment.name;
+
+                            var professorName = document.createElement('span');
+                            professorName.innerHTML = assignment.info;
+                            professorName.style.marginRight="10px";
+
+                            // 버튼 요소 생성
+                            var detailBtn = document.createElement('button');
+                            detailBtn.innerHTML = '상세';
+                            detailBtn.classList.add('detailBtn', 'assignBtn'); // 클래스 추가
+                        
+                        // 상세 버튼 클릭 이벤트 핸들러 정의
+                            detailBtn.addEventListener('click', createDetailHandler(assignment));
+                            // 상세 버튼 클릭 이벤트 핸들러 함수 정의
+                            function createDetailHandler(assignment) {
+                                return function () {
+                                    var li = this.parentNode;
+                                    var detailBox = li.querySelector('.detailBox');
+                                    if (detailBox) {
+                                        // 이미 detailBox가 존재하는 경우, 토글 기능으로 보이기/감추기
+                                        detailBox.style.display = detailBox.style.display === 'none' ? 'block' : 'none';
+                                    } else {
+                                        // detailBox가 없는 경우, 새로 생성하여 추가
+                                        var detailBox = document.createElement('div');
+                                        detailBox.classList.add('detailBox');
+                                        detailBox.innerText = assignment.myAssign;
+                                        li.appendChild(detailBox);
+                                    }
+                                };
+                            }
+                            li.appendChild(assignmentTitle);
+                            li.appendChild(assignmentName);
+                            li.appendChild(professorName);
+                            li.appendChild(detailBtn);
+
+                            ul.appendChild(li);
+                        }
+                            console.log("success get complete assignment");
+                        },
+                        error: function(error) {
+                            console.log("error get complete assignment");
+                        }
+                    });
+                });
+            }
+        
+            $.ajax({
+                method: 'GET',
+                url: '/ajax/assignments',
+                success: function (data) {
+                    // 서버로부터 받은 데이터를 순회하면서 각 과제에 대한 li 요소를 생성하고 ul에  추가
+                    for (var i = 0; i < data.length; i++) {
+                        var assignment = data[i];
+                        var li = document.createElement('li');
+                        li.id=assignId;
+                        assignId++;
+    
+                        var assignmentTitle = document.createElement('span');
+                        assignmentTitle.innerHTML = assignment.title;
+                        assignmentTitle.style.marginRight="30px";
+
+                        var assignmentName = document.createElement('span');
+                        assignmentName.innerHTML = assignment.name;
+
+                        var professorName = document.createElement('span');
+                        professorName.innerHTML = assignment.info;
+                        professorName.style.marginRight="10px";
+
+                        // 버튼 요소 생성
+                        var detailBtn = document.createElement('button');
+                        detailBtn.innerHTML = '상세';
+                        detailBtn.classList.add('detailBtn', 'assignBtn'); // 클래스 추가
+                    
+                       // 상세 버튼 클릭 이벤트 핸들러 정의
+                        detailBtn.addEventListener('click', createDetailHandler(assignment));
+                        // 상세 버튼 클릭 이벤트 핸들러 함수 정의
+                        function createDetailHandler(assignment) {
+                            return function () {
+                                var li = this.parentNode;
+                                var detailBox = li.querySelector('.detailBox');
+                                if (detailBox) {
+                                    // 이미 detailBox가 존재하는 경우, 토글 기능으로 보이기/감추기
+                                    detailBox.style.display = detailBox.style.display === 'none' ? 'block' : 'none';
+                                } else {
+                                    // detailBox가 없는 경우, 새로 생성하여 추가
+                                    var detailBox = document.createElement('div');
+                                    detailBox.classList.add('detailBox');
+                                    detailBox.innerText = assignment.detail;
+                                    li.appendChild(detailBox);
+                                }
+                            };
+                        }
+                       
+                        var submitBtn = document.createElement('button');
+                        submitBtn.innerHTML = '작성';
+                        submitBtn.classList.add('submitBtn', 'assignBtn'); // 클래스 추가
+
+                        submitBtn.addEventListener('click', function(assignment){
+                            var li = this.parentNode;
+                            var liId = li.id; // li 요소의 id 값
+                            var inputBox = li.querySelector('.inputBox');
+                            var saveBtn = li.querySelector('.saveBtn');
+                        
+                            if (inputBox && saveBtn) {
+                                inputBox.style.display = inputBox.style.display === 'none' ? 'block' : 'none';
+                                saveBtn.style.display = saveBtn.style.display === 'none' ? 'block' : 'none';
+                            } else {
+                                var inputBox = document.createElement('textarea');
+                                inputBox.classList.add('inputBox'); // 클래스 추가
+                                inputBox.id = 'inputBox';
+                                inputBox.rows = '4';
+                                inputBox.cols = '90';
+                                inputBox.style.marginTop = "4px";
+                                inputBox.placeholder = '입력해주세요';
+                        
+                                var saveBtn = document.createElement('button');
+                                saveBtn.classList.add('saveBtn'); // 클래스 추가
+                                saveBtn.innerHTML = '제출';
+                                saveBtn.classList.add('saveBtn', 'assignBtn'); // 클래스 추가
+                            }
+                            li.appendChild(inputBox);
+                            li.appendChild(saveBtn);
+
+                             // 제출 버튼 클릭 이벤트 핸들러 정의
+                             saveBtn.addEventListener('click', createSaveHandler(assignment,liId));
+                            // 제출 버튼 클릭 이벤트 핸들러 함수 정의 
+                            function createSaveHandler(assignment,liId) {
+                                return function () {
+                                    var li = event.target.parentNode; // 현재 이벤트가 발생한 요소의 부모 노드인 li 요소를 가져옴
+                                    var liId = li.id; // li 요소의 id 값
+                                    console.log(liId);
+                                  
+                                    var inputBox = li.querySelector('#inputBox').value;
+                                    console.log(inputBox);
+
+                                    // 과제 리스트에서 제출 완료한 과제는 삭제
+                                    var ul = li.parentNode;
+                                    ul.removeChild(li);
+                                    StorageCompleteAssignment();
+
+                                    if(inputBox){
+                                        $.ajax({
+                                            method:"POST",
+                                            url:"/submit",
+                                            data:{
+                                                myAssignment:inputBox,
+                                                liId:liId
+                                            },
+                                            success:function(data){
+                                                
+                                                console.log("success");
+                                            },
+                                            error:function(request, status, error){
+                                                console.log("data send error");
+                                            }                                    
+                                        });
+                                    }
+                                };
+                            }
+                         });
+                        li.appendChild(assignmentTitle);
+                        li.appendChild(assignmentName);
+                        li.appendChild(professorName);
+                        li.appendChild(detailBtn);
+                        li.appendChild(submitBtn);
+
+                        ul.appendChild(li);
+                    }
+                }
+            });
+        }
+    
+    </script>
+</head>
+<body>
+    <!-- <span style="display:flex; align-items:center; justify-content: center; margin-left:170px"> -->
+     <h1 style="color:rgb(54, 48, 167); margin-top:0px; margin-bottom:0px; text-align:center; cursor:pointer;">서울과학기술대학교</h1>
+    <h2 style="margin-top:0px;text-align:center;">E-class system</h2>
+
+    <input style="margin-left:930px;margin-bottom:10px;"id="searchInput" type="text"> <input style="cursor:pointer" type="button" id="search" value="조회" />
+    <div style="margin-left:1000px">
+        <label>   
+            <input type="radio" id="assignmentName" name="searchType" value="assignmentName">과제명
+        </label>
+        <label>   
+            <input type="radio" id="lectureName" name="searchType" value="lectureName">과목명
+        </label>
+    </div>
+   <br> 
+
+ <input type="button" id="complete" value="완료과제조회" />
+    <ul id='allAssign'>
+            
+
+    </ul>
+    
+</body>
+</html>
